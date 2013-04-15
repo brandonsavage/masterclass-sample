@@ -1,8 +1,12 @@
 <?php
 
-class Story {
+class Controller_Story {
+    
+    protected $db;
+    protected $config;
     
     public function __construct($config) {
+        $this->config = $config;
         $dbconfig = $config['database'];
         $dsn = 'mysql:host=' . $dbconfig['host'] . ';dbname=' . $dbconfig['name'];
         $this->db = new PDO($dsn, $dbconfig['user'], $dbconfig['pass']);
@@ -55,7 +59,7 @@ class Story {
             ';
         }
         
-        require_once 'layout.phtml';
+        require $this->config['views']['layout_path'] . '/layout.phtml';
         
     }
     
@@ -95,7 +99,7 @@ class Story {
             </form>
         ';
         
-        require_once 'layout.phtml';
+        require $this->config['views']['layout_path'] . '/layout.phtml';
     }
     
 }
