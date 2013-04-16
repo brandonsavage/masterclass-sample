@@ -2,46 +2,41 @@
 
 class Controller_Story {
     
-    protected $db;
+    protected $story_model;
+    protected $comment_model;
     protected $config;
+    protected $session;
     
     public function __construct($config) {
         $this->config = $config;
-        $dbconfig = $config['database'];
-        $dsn = 'mysql:host=' . $dbconfig['host'] . ';dbname=' . $dbconfig['name'];
-        $this->db = new PDO($dsn, $dbconfig['user'], $dbconfig['pass']);
-        $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->story_model = new Model_Story($config);
+        $this->comment_model = new Model_Comment($config);
+        $this->session = new Session_Default();
+        
     }
-    
+
     public function index() {
         if(!isset($_GET['id'])) {
             header("Location: /");
             exit;
         }
         
-        $story_sql = 'SELECT * FROM story WHERE id = ?';
-        $story_stmt = $this->db->prepare($story_sql);
-        $story_stmt->execute(array($_GET['id']));
-        if($story_stmt->rowCount() < 1) {
+        $story = $this->story_model->getStory($_GET['id']);
+        if(count($story) < 1) {
             header("Location: /");
             exit;
         }
+                
+        $comments = $this->comment_model->getStoryComments($_GET['id']);
+        $comment_count = count($comments);
         
-        $story = $story_stmt->fetch(PDO::FETCH_ASSOC);
-        
-        $comment_sql = 'SELECT * FROM comment WHERE story_id = ?';
-        $comment_stmt = $this->db->prepare($comment_sql);
-        $comment_stmt->execute(array($story['id']));
-        $comment_count = $comment_stmt->rowCount();
-        $comments = $comment_stmt->fetchAll(PDO::FETCH_ASSOC);
-
         $content = '
             <a class="headline" href="' . $story['url'] . '">' . $story['headline'] . '</a><br />
             <span class="details">' . $story['created_by'] . ' | ' . $comment_count . ' Comments | 
             ' . date('n/j/Y g:i a', strtotime($story['created_on'])) . '</span>
         ';
         
-        if(isset($_SESSION['AUTHENTICATED'])) {
+        if($this->session->isAuthenticated()) {
             $content .= '
             <form method="post" action="/comment/create">
             <input type="hidden" name="story_id" value="' . $_GET['id'] . '" />
@@ -64,7 +59,7 @@ class Controller_Story {
     }
     
     public function create() {
-        if(!isset($_SESSION['AUTHENTICATED'])) {
+        if(!$this->session->isAuthenticated()) {
             header("Location: /user/login");
             exit;
         }
@@ -75,15 +70,12 @@ class Controller_Story {
                !filter_input(INPUT_POST, 'url', FILTER_VALIDATE_URL)) {
                 $error = 'You did not fill in all the fields or the URL did not validate.';       
             } else {
-                $sql = 'INSERT INTO story (headline, url, created_by, created_on) VALUES (?, ?, ?, NOW())';
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute(array(
+                $args = array(
                    $_POST['headline'],
                    $_POST['url'],
-                   $_SESSION['username'],
-                ));
-                
-                $id = $this->db->lastInsertId();
+                   $this->session->username,
+                );
+                $id = $this->story_model->createStory($args);
                 header("Location: /story/?id=$id");
                 exit;
             }
