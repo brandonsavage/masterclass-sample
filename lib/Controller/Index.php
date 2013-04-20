@@ -1,18 +1,13 @@
 <?php
 
-class Controller_Index {
+class Controller_Index extends Controller_Base {
     
     protected $story_model;
-    protected $comment_model;
-    protected $config;
-    protected $session;
+    protected $comment_model;    
     
-    
-    public function __construct($config) {
-        $this->config = $config;
-        $this->story_model = new Model_Story($config);
-        $this->comment_model = new Model_Comment($config);
-        $this->session = new Session_Default();
+    public function _loadModels() {
+        $this->story_model = new Model_Story($this->db);
+        $this->comment_model = new Model_Comment($this->db);
     }
     
     public function index() {
