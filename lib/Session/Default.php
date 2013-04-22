@@ -1,8 +1,11 @@
 <?php
 
-class Session_Default {
+class Session_Default implements Session_Interface {
         
-    public function __construct() {
+    protected $_config;
+    
+    public function __construct(array $session_config = array()) {
+        $this->_config = $session_config;
         session_start();
     }
     
