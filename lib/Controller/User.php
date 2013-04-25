@@ -1,15 +1,11 @@
 <?php
 
-class Controller_User {
+class Controller_User extends Controller_Base {
     
-    protected $config;
     protected $model;
-    protected $session;
-    
-    public function __construct($config) {
-        $this->config = $config;
-        $this->model = new Model_User($config);
-        $this->session = new Session_Default();
+        
+    public function _loadModels() {
+        $this->model = new Model_User($this->db);
     }
     
     public function create() {
