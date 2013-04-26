@@ -5,7 +5,8 @@ class MasterController {
     private $config;
     protected $_session;
     protected $_db;
-    protected $router;
+    protected $_router;
+    protected $_request;
     
     public function __construct($config) {
         $this->_setupConfig($config);
@@ -14,9 +15,15 @@ class MasterController {
         $autoloader_path = require('Autoloader/' . $autoloader_driver . '.php');
         $autoloader = $this->loadDependency('Autoloader_', $autoloader_driver);
         spl_autoload_register(array($autoloader, 'loader'));
-        $this->router = $this->_loadRouter();
+        $this->_router = $this->_loadRouter();
         $this->_db = $this->_loadDb();
+        $this->_request = $this->_loadRequest();
         $this->_configureSession();
+    }
+    
+    protected function _loadRequest() {
+        $request = $this->config['request'];
+        return $this->loadDependency('Request_', $request);
     }
     
     protected function _loadRouter() {
@@ -30,12 +37,16 @@ class MasterController {
     }
     
     public function execute() {
-        $call = $this->router->determineRouting();
+        $call = $this->_router->determineRouting();
         $call_class = $call['call'];
         $class = ucfirst(array_shift($call_class));
         $class = 'Controller_' . $class;
         $method = array_shift($call_class);
-        $o = new $class($this->_session, $this->_db, $this->config);
+        $o = new $class($this->config);
+        $o->setDatabase($this->_db);
+        $o->setSession($this->_session);
+        $o->setRequest($this->_request);
+        $o->init();
         return $o->$method();
     }
     
