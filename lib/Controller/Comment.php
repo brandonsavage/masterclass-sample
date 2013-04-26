@@ -16,11 +16,13 @@ class Controller_Comment extends Controller_Base {
         
         $args = array(
             $this->session->username,
-            $_POST['story_id'],
-            filter_input(INPUT_POST, 'comment', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+            $this->request->get('story_id'),
+            filter_var($this->request->get('comment'), FILTER_SANITIZE_FULL_SPECIAL_CHARS),
         );
         $this->model->createComment($args);
-        header("Location: /story/?id=" . $_POST['story_id']);
+        $response = new Response_HttpRedirect();
+        $response->setUrl("Location: /story/?id=" . $this->request->get('story_id'));
+        return $response->renderResponse();
     }
     
 }

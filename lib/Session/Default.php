@@ -26,7 +26,11 @@ class Session_Default implements Session_Interface {
     }
     
     public function isAuthenticated() {
-        return $_SESSION['AUTHENTICATED'];
+        if(isset($_SESSION['AUTHENTICATED'])) {
+            return $_SESSION['AUTHENTICATED'];
+        }
+        
+        return false;
     }
     
     public function regenerate() {

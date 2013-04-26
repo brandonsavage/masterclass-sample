@@ -4,12 +4,27 @@ abstract class Controller_Base {
     
     protected $config = array();
     protected $session;
+    protected $db;
+    protected $request;
     
-    public function __construct(Session_Interface $session, Database_Base $db, array $config = array()) {
+    public function __construct(array $config = array()) {
         $this->config = $config;
-        $this->session = $session;
-        $this->db = $db;
+    }
+    
+    public function init() {
         $this->_loadModels();
+    }
+    
+    public function setSession(Session_Interface $session) {
+        $this->session = $session;
+    }
+    
+    public function setRequest(Request_Interface $request) {
+        $this->request = $request;
+    }
+    
+    public function setDatabase(Database_Base $db) {
+        $this->db = $db;
     }
     
     abstract protected function _loadModels();
