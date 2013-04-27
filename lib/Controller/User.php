@@ -12,57 +12,49 @@ class Controller_User extends Controller_Base {
         $error = null;
         
         // Do the create
-        if(isset($_POST['create'])) {
-            if(empty($_POST['username']) || empty($_POST['email']) ||
-               empty($_POST['password']) || empty($_POST['password_check'])) {
+        if($this->request->get('create')) {
+            if(!$this->request->get('username') || !$this->request->get('email') ||
+               !$this->request->get('password') || !$this->request->get('password_check')) {
                 $error = 'You did not fill in all required fields.';
             }
             
             if(is_null($error)) {
-                if(!filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL)) {
+                if(!filter_var($this->request->get('email'), FILTER_VALIDATE_EMAIL)) {
                     $error = 'Your email address is invalid';
                 }
             }
             
             if(is_null($error)) {
-                if($_POST['password'] != $_POST['password_check']) {
+                if($this->request->get('password') != $this->request->get('password_check')) {
                     $error = "Your passwords didn't match.";
                 }
             }
             
             if(is_null($error)) {
 
-                if($this->model->checkUsername($_POST['username']) > 0) {
+                if($this->model->checkUsername($this->request->get('username')) > 0) {
                     $error = 'Your chosen username already exists. Please choose another.';
                 }
             }
             
             if(is_null($error)) {
                 $params = array(
-                    $_POST['username'],
-                    $_POST['email'],
-                    md5($_POST['username'] . $_POST['password']),
+                    $this->request->get('username'),
+                    $this->request->get('email'),
+                    md5($this->request->get('username') . $this->request->get('password')),
                 );
                 $this->model->createUser($params);
-                header("Location: /user/login");
-                exit;
+                $response = new Response_HttpRedirect();
+                $response->setUrl('/user/login');
+                return $response->renderResponse();
             }
         }
         // Show the create form
         
-        $content = '
-            <form method="post">
-                ' . $error . '<br />
-                <label>Username</label> <input type="text" name="username" value="" /><br />
-                <label>Email</label> <input type="text" name="email" value="" /><br />
-                <label>Password</label> <input type="password" name="password" value="" /><br />
-                <label>Password Again</label> <input type="password" name="password_check" value="" /><br />
-                <input type="submit" name="create" value="Create User" />
-            </form>
-        ';
-        
-        require $this->config['views']['layout_path'] . '/layout.phtml';
-        
+        $response = new Response_Http();
+        return $response->showView(array('error' => $error),
+                            $this->config['views']['view_path'] . '/user/create.phtml',
+                            $this->config['views']['layout_path'] . '/layout.phtml');        
     }
     
     public function account() {
@@ -85,28 +77,17 @@ class Controller_User extends Controller_Base {
         
         $details = $this->model->getUserData($this->session->username);
         
-        $content = '
-        ' . $error . '<br />
-        
-        <label>Username:</label> ' . $details['username'] . '<br />
-        <label>Email:</label>' . $details['email'] . ' <br />
-        
-         <form method="post">
-                ' . $error . '<br />
-            <label>Password</label> <input type="password" name="password" value="" /><br />
-            <label>Password Again</label> <input type="password" name="password_check" value="" /><br />
-            <input type="submit" name="updatepw" value="Create User" />
-        </form>';
-        
-        require $this->config['views']['layout_path'] . '/layout.phtml';
-    }
+        $response = new Response_Http();
+        return $response->showView(array('error' => $error, 'username' => $details['username'], 'email' => $details['email']),
+                            $this->config['views']['view_path'] . '/user/account.phtml',
+                            $this->config['views']['layout_path'] . '/layout.phtml');    }
     
     public function login() {
         $error = null;
         // Do the login
-        if(isset($_POST['login'])) {
-            $username = $_POST['user'];
-            $password = $_POST['pass'];
+        if($this->request->get('login')) {
+            $username = $this->request->get('user');
+            $password = $this->request->get('pass');
             $result = $this->model->authenticateUser($username, $password);
 
             if($result['authenticated']) {
@@ -114,25 +95,19 @@ class Controller_User extends Controller_Base {
                session_regenerate_id();
                $this->session->username = $data['username'];
                $this->session->authenticate();
-               header("Location: /");
-               exit;
+               $response = new Response_HttpRedirect();
+               $response->setUrl('/');
+               return $response->renderResponse();
             }
             else {
                 $error = 'Your username/password did not match.';
             }
         }
         
-        $content = '
-            <form method="post">
-                ' . $error . '<br />
-                <label>Username</label> <input type="text" name="user" value="" />
-                <label>Password</label> <input type="password" name="pass" value="" />
-                <input type="submit" name="login" value="Log In" />
-            </form>
-        ';
-        
-        require $this->config['views']['layout_path'] . '/layout.phtml';
-        
+        $response = new Response_Http();
+        return $response->showView(array('error' => $error),
+                            $this->config['views']['view_path'] . '/user/login.phtml',
+                            $this->config['views']['layout_path'] . '/layout.phtml');        
     }
     
     public function logout() {

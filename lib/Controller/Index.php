@@ -13,22 +13,17 @@ class Controller_Index extends Controller_Base {
     public function index() {
         
         $stories = $this->story_model->getListOfStories();
-        
-        $content = '<ol>';
-        
-        foreach($stories as $story) {
+                
+        foreach($stories as $k => $story) {
             $count = $this->comment_model->getCommentCountForStory($story['id']);
-            $content .= '
-                <li>
-                <a class="headline" href="' . $story['url'] . '">' . $story['headline'] . '</a><br />
-                <span class="details">' . $story['created_by'] . ' | <a href="/story/?id=' . $story['id'] . '">' . $count['count'] . ' Comments</a> | 
-                ' . date('n/j/Y g:i a', strtotime($story['created_on'])) . '</span>
-                </li>
-            ';
-        }
+            $stories[$k]['count'] = $count['count'];
+        }        
         
-        $content .= '</ol>';
-        
-        require $this->config['views']['layout_path'] . '/layout.phtml';
+        $response = new Response_Http();
+        return $response->showView(array('stories' => $stories), 
+                                  $this->config['views']['view_path'] . '/index/index.phtml',
+                                  $this->config['views']['layout_path'] . '/layout.phtml'
+                            );
+                                  
     }
 }
