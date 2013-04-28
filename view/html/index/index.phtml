@@ -2,13 +2,16 @@
 
 <?php
 
-foreach($data['stories'] as $story) {
+foreach($data['stories'] as $thestory) {
+
+$story = $thestory->getStory();
+$count = $thestory->getCommentCount();
 
 ?>
 
 <li>
 <a class="headline" href="<?php echo $story['url']?>"><?php echo $story['headline'] ?></a><br />
-<span class="details"><?php echo  $story['created_by']?> | <a href="/story/?id=<?php echo  $story['id'] ?>"><?php echo  $story['count'] ?> Comments</a> | 
+<span class="details"><?php echo  $story['created_by']?> | <a href="/story/?id=<?php echo  $story['id'] ?>"><?php echo  $count ?> Comments</a> | 
 <?php echo  date('n/j/Y g:i a', strtotime($story['created_on'])) ?></span>
 </li>
 
