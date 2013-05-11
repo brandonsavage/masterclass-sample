@@ -3,12 +3,10 @@
 class Controller_Story extends Controller_Base {
     
     protected $story_model;
-    protected $comment_model;
     
-    public function _loadModels() {
-        $this->story_model = new Model_Story($this->db);
-        $this->comment_model = new Model_Comment($this->db);
-        
+    public function _loadModels() {        
+        $data_object = new Model_Story_Data($this->db);
+        $this->story_model = new Model_Story_Gateway($data_object);
     }
 
     public function index() {
@@ -19,14 +17,15 @@ class Controller_Story extends Controller_Base {
         }
         
         $story = $this->story_model->getStory($this->request->get('id'));
-        if(count($story) < 1) {
+        if(!($story instanceof Model_Story_Object)) {
             $response = new Response_HttpRedirect();
             $response->setUrl('/');
             return $response->renderResponse();
         }
-                
-        $comments = $this->comment_model->getStoryComments($this->request->get('id'));
-        $comment_count = count($comments);
+        
+        $comments = $story->getComments();
+        $comment_count = $story->getCommentCount();
+        $story = $story->getStory();
         
         $response = new Response_Http();
         return $response->showView(array('story_id' => $this->request->get('id'),
@@ -48,19 +47,22 @@ class Controller_Story extends Controller_Base {
         
         $error = '';
         if($this->request->get('create')) {
-            if(!$this->request->get('headline') || !$this->request->get('url') ||
-               !filter_var($this->request->get('url'), FILTER_VALIDATE_URL)) {
-                $error = 'You did not fill in all the fields or the URL did not validate.';       
-            } else {
+            try {
                 $args = array(
-                   $this->request->get('headline'),
-                   $this->request->get('url'),
-                   $this->session->username,
+                   'headline' => $this->request->get('headline'),
+                   'url' => $this->request->get('url'),
+                   'username' => $this->session->username,
                 );
-                $id = $this->story_model->createStory($args);
+                $id = $this->story_model->saveStory($args);
                 $response = new Response_HttpRedirect();
                 $response->setUrl("/story/?id=$id");
-                return $response->renderResponse();
+            return $response->renderResponse();
+            } catch (Model_Story_Exception $e) {
+                $error = $e->getMessage();
+            } catch (Model_Exception $e) {
+                
+            } catch (Exception $e) {
+                
             }
         }
         
